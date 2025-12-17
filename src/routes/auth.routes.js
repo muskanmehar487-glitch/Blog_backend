@@ -17,8 +17,8 @@ router.post(
 router.post(
   '/login',
   [
-    body('email').isEmail(),
-    body('password').isString()
+    body('identifier').isString().notEmpty().withMessage('Email or username is required'),
+    body('password').isString().notEmpty()
   ],
   login
 );
