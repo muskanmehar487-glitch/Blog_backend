@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy Node.js app to Azure Web App - blog-backend1
+name: Build and deploy Node.js app to Azure Web App - backend1
 
 on:
   push:
@@ -21,31 +21,31 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
+          node-version: '24.x'
 
-      - name: npm install, build, and test (backend)
-        working-directory: backend
+      - name: Debug - Show directory structure
+        run: |
+          pwd
+          ls -la
+          echo "Checking for package.json..."
+          test -f package.json && echo "package.json found" || echo "package.json NOT found"
+
+      - name: npm ci, build, and test
         run: |
           npm ci
           npm run build --if-present
           npm run test --if-present
 
-      - name: Zip backend for deploy
-        working-directory: backend
-        run: |
-          zip -r ../backend.zip . -x "node_modules/.cache/*" ".git/*"
-
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: backend.zip
+          path: .
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      id-token: write #This is required for requesting the JWT
       contents: read #This is required for actions/checkout
 
     steps:
@@ -53,20 +53,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
-      
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_0C118C8BC3C04349BB5758F1A4E41BBD }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E864A91C0BD74CB4B3CDB5C1C3BE0D83 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_071921A5F9BE4BB7A7F2C80C2913F560 }}
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'blog-backend1'
+          app-name: 'backend1'
           slot-name: 'Production'
-          package: backend.zip
-          startup-command: 'npm start'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: .
           
