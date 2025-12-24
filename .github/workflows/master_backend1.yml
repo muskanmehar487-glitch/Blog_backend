@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy Node.js app to Azure Web App - backend1
+name: Build and deploy Node.js app to Azure Web App - blog-backend1
 
 on:
   push:
@@ -21,19 +21,25 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '24.x'
+          node-version: '20.x'
 
-      - name: npm install, build, and test
+      - name: npm install, build, and test (backend)
+        working-directory: backend
         run: |
-          npm install
+          npm ci
           npm run build --if-present
           npm run test --if-present
+
+      - name: Zip backend for deploy
+        working-directory: backend
+        run: |
+          zip -r ../backend.zip . -x "node_modules/.cache/*" ".git/*"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: backend.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -51,15 +57,16 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D67A4CBA94294E75A388FBA13D625776 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_AE8E908760E94993926DCD871BE024CA }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A5302A61C0564496A1D6A57E768D01E6 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_0C118C8BC3C04349BB5758F1A4E41BBD }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E864A91C0BD74CB4B3CDB5C1C3BE0D83 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_071921A5F9BE4BB7A7F2C80C2913F560 }}
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'backend1'
+          app-name: 'blog-backend1'
           slot-name: 'Production'
-          package: .
+          package: backend.zip
+          startup-command: 'npm start'
           
